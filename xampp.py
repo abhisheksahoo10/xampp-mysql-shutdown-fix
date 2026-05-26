@@ -1,13 +1,18 @@
 import shutil
 import os
 import logging
-from pathlib import Path
+import sys
+
+# Fix Windows console encoding issue
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout.reconfigure(encoding='utf-8')
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(levelname)s: %(message)s',
     handlers=[
-        logging.FileHandler('backup.log'),
+        logging.FileHandler('backup.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -40,7 +45,7 @@ def validate():
     if not os.access(restore_dest, os.W_OK):
         raise PermissionError(f"No write access: {restore_dest}")
     
-    logger.info("✓ Validation passed")
+    logger.info("[OK] Validation passed")
     return True
 
 def backup():
@@ -58,9 +63,9 @@ def backup():
     if not dry_run:
         shutil.copytree(src, dest)
     else:
-        logger.info(f"[DRY] Copy {src} → {dest}")
+        logger.info(f"[DRY] Copy {src} -> {dest}")
     
-    logger.info("✓ Backup complete")
+    logger.info("[OK] Backup complete")
 
 def cleanup():
     """Clean data folder, keeping essential files."""
@@ -90,7 +95,7 @@ def cleanup():
             except PermissionError:
                 logger.warning(f"  Skip (in use): {item}")
     
-    logger.info(f"✓ Cleanup complete ({deleted} deleted)")
+    logger.info(f"[OK] Cleanup complete ({deleted} deleted)")
 
 def restore():
     """Restore data from backup."""
@@ -124,7 +129,7 @@ def restore():
             logger.info(f"  Restore file: {item}")
             copied += 1
     
-    logger.info(f"✓ Restore complete ({copied} restored)")
+    logger.info(f"[OK] Restore complete ({copied} restored)")
 
 def main():
     try:
@@ -138,15 +143,14 @@ def main():
         restore()
         
         logger.info("=" * 50)
-        logger.info("✓ ALL COMPLETE")
+        logger.info("[OK] ALL COMPLETE")
         logger.info("=" * 50)
     
     except Exception as e:
-        logger.error(f"✗ {e}")
+        logger.error(f"[FAIL] {e}")
         return False
     
     return True
 
 if __name__ == '__main__':
-    import sys
     sys.exit(0 if main() else 1)
